@@ -60,73 +60,43 @@ const toolbox = [
       name="description"
       content="Portfolio personale: progetti, automazioni e strumenti digitali."
     />
-
-    <style>
-      /* Reveal / Flip-book effect */
-      .reveal {
-        opacity: 0;
-        transform: translateY(24px) rotateX(6deg);
-        transition:
-          opacity 0.6s ease,
-          transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-        will-change: opacity, transform;
-      }
-
-      .reveal.is-visible {
-        opacity: 1;
-        transform: translateY(0) rotateX(0deg);
-      }
-    </style>
   </head>
 
   <body class="bg-zinc-950 text-zinc-50 selection:bg-violet-400/30 selection:text-zinc-50">
-    <!-- Stardust Canvas (Step B) -->
-    <canvas id="stardust" class="fixed inset-0 -z-20 h-full w-full"></canvas>
-
-    <!-- Background (kept, slightly toned down) -->
+    <!-- Background -->
     <div class="pointer-events-none fixed inset-0 -z-10">
       <div
-        class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_15%_10%,rgba(139,92,246,0.18),transparent_55%),radial-gradient(900px_circle_at_85%_20%,rgba(99,102,241,0.14),transparent_55%),radial-gradient(900px_circle_at_50%_90%,rgba(34,197,94,0.06),transparent_60%)]"
-      ></div>
+        class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_15%_10%,rgba(139,92,246,0.20),transparent_55%),radial-gradient(900px_circle_at_85%_20%,rgba(99,102,241,0.18),transparent_55%),radial-gradient(900px_circle_at_50%_90%,rgba(34,197,94,0.10),transparent_60%)]"
+      >
+      </div>
       <div
-        class="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:56px_56px]"
-      ></div>
-      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/15 to-zinc-950"></div>
+        class="absolute inset-0 opacity-[0.10] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:56px_56px]"
+      >
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/20 to-zinc-950"></div>
     </div>
 
     <!-- Header -->
     <header class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/60 backdrop-blur">
-      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <a href="#top" class="flex items-center gap-3 font-semibold tracking-tight">
-          <img src="/fd-logo.png" alt="FD Logo" class="h-7 w-auto" />
-          <span class="text-sm md:text-base">{name}</span>
-        </a>
+  <img
+    src="/fd-logo.png"
+    alt="FD Logo"
+    class="h-7 w-auto"
+  />
+  <span class="text-sm md:text-base">
+    {name}
+  </span>
+</a>
 
-        <!-- Step A: Tabs (desktop) -->
-        <nav class="hidden md:flex items-center gap-2 text-sm text-zinc-300">
-          {[
-            ["Overview", "#top"],
-            ["Projects", "#projects"],
-            ["About", "#about"],
-            ["Now", "#now"],
-            ["Toolbox", "#toolbox"],
-            ["Contact", "#contact"],
-          ].map(([label, href]) => (
-            <a
-              class="tab-link rounded-full border border-white/10 bg-white/5 px-3 py-1.5 hover:bg-white/10"
-              href={href}
-              data-href={href}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
 
-        <!-- Mobile fallback: simple links (no tabs) -->
-        <nav class="md:hidden flex items-center gap-3 text-xs text-zinc-300">
-          <a class="hover:text-white" href="#projects">Projects</a>
-          <a class="hover:text-white" href="#about">About</a>
-          <a class="hover:text-white" href="#contact">Contact</a>
+        <nav class="flex items-center gap-4 text-sm text-zinc-300">
+          <a class="hover:text-white" href="#projects">Progetti</a>
+          <a class="hover:text-white" href="#about">Chi sono</a>
+          <a class="hover:text-white" href="#now">Now</a>
+          <a class="hover:text-white" href="#toolbox">Toolbox</a>
+          <a class="hover:text-white" href="#contact">Contatti</a>
         </nav>
       </div>
     </header>
@@ -146,13 +116,14 @@ const toolbox = [
             </div>
 
             <h1 class="mt-5 text-4xl font-semibold tracking-tight text-zinc-50 md:text-6xl">
-              Costruisco <span class="text-violet-300">tool</span> e <span class="text-indigo-300">automazioni</span>
-              che diventano demo reali.
-            </h1>
+  Costruisco <span class="text-violet-300">tool</span> e <span class="text-indigo-300">automazioni</span>
+  che diventano demo reali.
+</h1>
 
-            <p class="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
-              Dal problema alla soluzione: progetti data-driven, automazioni e prototipi web sviluppati in modo pratico e veloce.
-            </p>
+<p class="mt-5 max-w-2xl text-base leading-relaxed text-zinc-300">
+  Dal problema alla soluzione: progetti data-driven, automazioni e prototipi web sviluppati in modo pratico e veloce.
+</p>
+
 
             <div class="mt-7 flex flex-wrap gap-3">
               <a
@@ -203,7 +174,7 @@ const toolbox = [
 
         <div class="mt-6 grid gap-4 md:grid-cols-3">
           <!-- Hero project (span 2) -->
-          <article class="reveal group md:col-span-2 rounded-3xl border border-white/10 bg-gradient-to-b from-white/7 to-white/3 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-white/20">
+          <article class="group md:col-span-2 rounded-3xl border border-white/10 bg-gradient-to-b from-white/7 to-white/3 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-white/20">
             <div class="flex items-start justify-between gap-4">
               <h3 class="text-lg font-semibold text-zinc-50">
                 {featured[0]?.title ?? "Project Placeholder"}
@@ -244,7 +215,7 @@ const toolbox = [
           <!-- Side projects (2 stacked) -->
           <div class="grid gap-4">
             {[featured[1], featured[2]].map((p) => (
-              <article class="reveal group rounded-3xl border border-white/10 bg-white/5 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-white/20">
+              <article class="group rounded-3xl border border-white/10 bg-white/5 p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-white/20">
                 <h3 class="text-base font-semibold text-zinc-50">{p?.title ?? "Project Placeholder"}</h3>
                 <p class="mt-2 text-sm leading-relaxed text-zinc-300">{p?.desc ?? ""}</p>
 
@@ -288,7 +259,7 @@ const toolbox = [
         <h2 class="text-2xl font-semibold tracking-tight text-zinc-50">Now</h2>
         <p class="mt-2 text-sm text-zinc-400">Cosa sto facendo in questo periodo.</p>
 
-        <div class="reveal mt-6 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <ul class="space-y-3 text-sm text-zinc-300">
             {now.map((item) => (
               <li class="flex gap-3">
@@ -301,11 +272,11 @@ const toolbox = [
       </section>
 
       <!-- TOOLBOX -->
-      <section id="toolbox" class="py-14 md:py-16">
+      <section id="toolbox" class="py-12">
         <h2 class="text-2xl font-semibold tracking-tight text-zinc-50">Toolbox</h2>
         <p class="mt-2 text-sm text-zinc-400">Strumenti e stack che uso spesso (in evoluzione).</p>
 
-        <div class="reveal mt-6 flex flex-wrap gap-2">
+        <div class="mt-6 flex flex-wrap gap-2">
           {toolbox.map((t) => (
             <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-200">
               {t}
@@ -315,8 +286,8 @@ const toolbox = [
       </section>
 
       <!-- CONTACT -->
-      <section id="contact" class="py-16 md:py-20">
-        <div class="reveal rounded-3xl border border-white/10 bg-white/5 p-6">
+      <section id="contact" class="py-14">
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
           <h2 class="text-2xl font-semibold tracking-tight text-zinc-50">Contatti</h2>
           <p class="mt-2 text-sm text-zinc-300">
             Vuoi parlare di un progetto o collaborazione? Scrivimi.
@@ -354,160 +325,5 @@ const toolbox = [
         © {new Date().getFullYear()} {name} — Portfolio
       </footer>
     </main>
-
-    <!-- Step A: Tab active state while scrolling (fixed top behavior) -->
-    <script is:inline>
-      const tabLinks = Array.from(document.querySelectorAll(".tab-link"));
-      const hrefToEl = new Map(
-        tabLinks.map((a) => [a.getAttribute("href"), document.querySelector(a.getAttribute("href"))])
-      );
-
-      function setActive(href) {
-        tabLinks.forEach((a) => {
-          const isOn = a.getAttribute("href") === href;
-          a.style.borderColor = isOn ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)";
-          a.style.background = isOn ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.05)";
-          a.style.color = isOn ? "rgba(255,255,255,0.95)" : "rgba(228,228,231,0.9)";
-        });
-      }
-
-      function computeActive() {
-        const y = window.scrollY || document.documentElement.scrollTop || 0;
-
-        // Force Overview when near top
-        if (y < 80) {
-          setActive("#top");
-          return;
-        }
-
-        const center = window.innerHeight * 0.35;
-        let bestHref = "#top";
-        let bestDist = Infinity;
-
-        for (const [href, el] of hrefToEl.entries()) {
-          if (!el) continue;
-          const rect = el.getBoundingClientRect();
-          const dist = Math.abs(rect.top - center);
-
-          if (rect.top < window.innerHeight && dist < bestDist) {
-            bestDist = dist;
-            bestHref = href;
-          }
-        }
-
-        setActive(bestHref);
-      }
-
-      setActive("#top");
-      computeActive();
-
-      let ticking = false;
-      window.addEventListener(
-        "scroll",
-        () => {
-          if (!ticking) {
-            ticking = true;
-            requestAnimationFrame(() => {
-              computeActive();
-              ticking = false;
-            });
-          }
-        },
-        { passive: true }
-      );
-
-      window.addEventListener("resize", computeActive, { passive: true });
-    </script>
-
-    <!-- Flip-book / Reveal on scroll -->
-    <script is:inline>
-      const revealEls = document.querySelectorAll(".reveal");
-
-      const revealObs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add("is-visible");
-              revealObs.unobserve(e.target); // reveal once
-            }
-          });
-        },
-        {
-          threshold: 0.18,
-          rootMargin: "0px 0px -10% 0px",
-        }
-      );
-
-      revealEls.forEach((el) => revealObs.observe(el));
-    </script>
-
-    <!-- Step B: Stardust canvas animation -->
-    <script is:inline>
-      const canvas = document.getElementById("stardust");
-      const ctx = canvas.getContext("2d", { alpha: true });
-
-      let w = 0, h = 0, dpr = 1;
-
-      function resize() {
-        dpr = Math.min(window.devicePixelRatio || 1, 2);
-        w = canvas.clientWidth;
-        h = canvas.clientHeight;
-        canvas.width = Math.floor(w * dpr);
-        canvas.height = Math.floor(h * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-
-      window.addEventListener("resize", resize, { passive: true });
-      resize();
-
-      const STAR_COUNT = 170; // performance knob
-      const stars = Array.from({ length: STAR_COUNT }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        z: Math.random(),              // depth
-        r: 0.6 + Math.random() * 1.2,  // radius
-        v: 0.08 + Math.random() * 0.25 // speed
-      }));
-
-      let running = true;
-      document.addEventListener("visibilitychange", () => {
-        running = !document.hidden;
-        if (running) requestAnimationFrame(tick);
-      });
-
-      function tick() {
-        if (!running) return;
-
-        ctx.clearRect(0, 0, w, h);
-
-        // Stars
-        for (const s of stars) {
-          s.y += s.v * (0.6 + s.z);
-          s.x += 0.02 * (s.z - 0.5); // tiny drift
-
-          if (s.y > h + 10) { s.y = -10; s.x = Math.random() * w; s.z = Math.random(); }
-          if (s.x > w + 10) s.x = -10;
-          if (s.x < -10) s.x = w + 10;
-
-          const alpha = 0.14 + s.z * 0.35;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-          ctx.fill();
-
-          // occasional subtle "tint" sparkle
-          if (Math.random() < 0.002) {
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.r + 1.2, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(139,92,246,${0.06 + s.z * 0.12})`;
-            ctx.fill();
-          }
-        }
-
-        requestAnimationFrame(tick);
-      }
-
-      requestAnimationFrame(tick);
-    </script>
   </body>
 </html>
