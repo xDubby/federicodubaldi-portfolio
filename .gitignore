@@ -22,3 +22,11 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# data pipelines
+tools/smart-data-cleaning/data/kaggle_raw/
+tools/smart-data-cleaning/data/working/
+
+# large csv outputs
+*.csv
+
