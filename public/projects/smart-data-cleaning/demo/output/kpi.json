@@ -1,0 +1,33 @@
+{
+  "rows": 118772,
+  "orders": 115620,
+  "customers": 70171,
+  "products": 17415,
+  "total_value": 372620.57999999996,
+  "avg_item_value": 3.1372762940760444,
+  "aov": 3.222803840166062,
+  "median_order_value": 3.05,
+  "repeat_rate": 0.3652363511992133,
+  "top_departments": [
+    {
+      "department": "produce",
+      "items": 34453
+    },
+    {
+      "department": "dairy eggs",
+      "items": 20022
+    },
+    {
+      "department": "snacks",
+      "items": 10525
+    },
+    {
+      "department": "beverages",
+      "items": 9888
+    },
+    {
+      "department": "frozen",
+      "items": 8032
+    }
+  ]
+}

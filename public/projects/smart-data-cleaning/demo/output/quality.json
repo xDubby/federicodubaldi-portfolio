@@ -1,0 +1,40 @@
+{
+  "rows": {
+    "raw": 123600,
+    "normalized": 123600,
+    "clean": 118772,
+    "dropped": 4828
+  },
+  "duplicates_removed": 3600,
+  "missing_cells_raw": 3708,
+  "missing_cells_clean": 120580,
+  "top_missing_columns_clean": [
+    {
+      "column": "order_hour",
+      "missing": 118772
+    },
+    {
+      "column": "product_name",
+      "missing": 617
+    },
+    {
+      "column": "aisle",
+      "missing": 596
+    },
+    {
+      "column": "department",
+      "missing": 595
+    }
+  ],
+  "notes": [
+    "Renamed column 'Order ID' -> 'order_id'",
+    "Renamed column 'CustomerID' -> 'user_id'",
+    "Renamed column 'OrderDate' -> 'order_date'",
+    "Renamed column 'Unit Price' -> 'unit_price'",
+    "Renamed column 'Order Value' -> 'order_value'",
+    "Removed duplicates on (order_id, product_id): 3600",
+    "Dropped rows missing critical fields ['order_id', 'user_id', 'product_id', 'order_date']: 614",
+    "Dropped rows with invalid unit_price: 614",
+    "Rows: 123600 -> 118772 (delta -4828)"
+  ]
+}
