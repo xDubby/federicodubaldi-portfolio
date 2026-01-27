@@ -1,0 +1,279 @@
+SMART DATA CLEANING & REPORTING — FULL CASE STUDY
+=================================================
+
+Status: In progress (demo-first)
+Project goal
+------------
+Turn a messy real-world-like CSV export into business-ready outputs:
+- cleaned.csv     (clean dataset)
+- kpi.json        (core KPIs)
+- quality.json    (data-quality metrics + applied rules)
+- report.md       (human-readable summary)
+
+This project is designed to demonstrate:
+1) Schema variability handling (missing/renamed columns)
+2) Robust data cleaning (types, missing, duplicates, invalid rows)
+3) Data quality visibility (explicit checks, warnings, measurable outcomes)
+4) Business-ready deliverables (KPIs + report + shareable outputs)
+5) “Idiot-proof” UX (no silent failures, always clear messages)
+
+Repository & links (PLACEHOLDER)
+--------------------------------
+- Repo: https://github.com/PLACEHOLDER/REPO-URL   (TODO: replace)
+- Demo input/output lives in:
+  /public/projects/smart-data-cleaning/demo/
+
+Context: why this exists
+-----------------------
+In most companies, data doesn’t fail loudly. It fails silently:
+- dates are parsed incorrectly (day/month confusion)
+- numbers become strings (“1,47” instead of 1.47)
+- duplicate rows inflate totals
+- missing values distort KPIs
+- schema changes break pipelines
+
+The impact is not “a crash”.
+The impact is wrong reports and wrong decisions.
+
+Dataset selection and strategy
+------------------------------
+We wanted a dataset that looks like a real e-commerce export:
+- many rows
+- product-level purchase data
+- time dimension (orders over days/hours)
+- enough structure to compute meaningful KPIs
+
+Instead of using Olist (already used in another project), we used the
+Instacart Online Grocery Basket Analysis dataset as a realistic base.
+
+Key decision: keep the project portfolio-friendly
+-------------------------------------------------
+Kaggle raw data and big working files should NOT be committed to git.
+They are stored locally under:
+- tools/smart-data-cleaning/data/kaggle_raw/
+- tools/smart-data-cleaning/data/working/
+
+Only the small demo input/output is committed:
+- public/.../demo/input/orders_raw.csv
+- public/.../demo/output/*
+
+This ensures:
+- the repository remains light
+- the demo remains reproducible
+- the portfolio page can show real outputs
+
+Synthetic data generation (why and how)
+---------------------------------------
+Real-world exports are messy in very specific ways.
+If we only clean a “nice” CSV, we don’t demonstrate robustness.
+
+So we used a 2-step approach:
+
+Step A) Create a clean base dataset
+- Starting from Instacart raw data, we build a normalized “orders” table:
+  order_id, user_id, order_date, order_hour, product_id, product_name,
+  department, quantity, unit_price, etc.
+- Output: orders_clean_base.csv (very large)
+- Then we create a manageable sample:
+  orders_clean_base_sample.csv (~120k rows)
+
+Step B) Inject controlled noise (the “messy export”)
+We generate an input file that intentionally contains common problems:
+- Missing values (randomly removed cells / partial rows)
+- Dirty values (strings in numeric fields, comma decimal separator)
+- Mixed date formats (YYYY-MM-DD + DD/MM/YYYY)
+- Duplicates (exact duplicates and/or key-level duplicates)
+- Outliers (extreme unit_price / quantity)
+- Schema drift (renaming columns, extra columns, missing columns)
+
+We use “profiles” (light/medium/hard) to control severity:
+- light: minor issues, mostly recoverable
+- medium: realistic messiness for business exports (default)
+- hard: stress-test, higher invalid rate and more type conflicts
+
+Resulting demo file:
+- public/projects/smart-data-cleaning/demo/input/orders_raw.csv
+
+Typical data issues observed (real-world patterns)
+--------------------------------------------------
+1) Schema drift
+   - The same concept appears with different column names across exports.
+   - Example: “Order ID” vs “order_id”, “Unit Price” vs “unit_price”.
+
+2) Mixed types in the same column
+   - Numeric columns containing strings, spaces, symbols.
+   - Example: quantity="1" (string), unit_price="1,47" (comma decimal).
+
+3) Locale issues
+   - Decimal separator mismatch: comma vs dot.
+   - Date formats: DD/MM/YYYY vs YYYY-MM-DD.
+
+4) Duplicates
+   - Duplicate rows inflate revenue and product counts.
+   - Often created by merges, repeated exports, or human copy/paste.
+
+5) Missing values
+   - Missing product_name, department, unit_price, etc.
+   - Must be handled explicitly:
+     - impute when safe
+     - drop when business-critical fields are missing
+
+6) Outliers
+   - Unrealistic prices or quantities.
+   - Must be flagged and either capped, removed, or reported.
+
+Cleaning pipeline: overall design
+---------------------------------
+The pipeline follows a strict “separation of concerns”:
+
+- cleaning.py
+  Normalization + parsing + schema mapping + drop rules
+
+- quality_checks.py
+  Data quality metrics and checks:
+  missing, duplicates, invalid rows, type conversions summary
+
+- kpi.py
+  Computes business metrics on the cleaned dataset:
+  totals, AOV, top departments/products, etc.
+
+- report.py
+  Builds a human-readable report.md:
+  what happened, what changed, what to watch
+
+- run_pipeline.py
+  CLI entrypoint:
+  reads input, runs steps, writes output files, prints a summary
+
+Core principle: deterministic and auditable
+-------------------------------------------
+The pipeline must make it clear:
+- what it changed
+- what it removed
+- why it removed it
+- what is still missing afterwards
+
+No silent “magic”.
+
+Important implementation details
+--------------------------------
+1) Defensive date parsing
+   Problem:
+   - dayfirst=True can create warnings and ambiguous parsing.
+   Solution:
+   - detect ISO vs EU format and parse by explicit format masks
+   - fallback parsing only for “other” cases
+   Outcome:
+   - no warnings
+   - stable conversion
+
+2) Numeric normalization
+   - Convert "1,47" → 1.47
+   - Strip spaces and invalid characters
+   - Coerce errors to NaN and handle via rules
+
+3) Dedup strategy
+   - Remove duplicates explicitly and report count
+   - Keep rules consistent (e.g., exact duplicates or key duplicates)
+
+4) Drop rules (invalid rows)
+   - Rows with invalid critical fields are dropped:
+     e.g., invalid unit_price, missing product_id, etc.
+   - Dropped count is shown in summary and quality.json
+
+5) “Idiot-proof” behavior
+   - If columns are missing: attempt mapping / fallback
+   - If types fail: coerce, track, report
+   - Always output quality.json + report.md to explain outcomes
+
+Outputs and why they are separated
+----------------------------------
+We produce four distinct outputs for clarity:
+
+1) cleaned.csv
+   The cleaned dataset. This is what downstream analysis should use.
+
+2) kpi.json
+   Business KPIs for quick consumption, dashboards, or APIs.
+
+3) quality.json
+   A machine-readable quality summary:
+   - row counts in/out/dropped
+   - duplicates removed
+   - missing stats
+   - applied transformations and renames
+
+4) report.md
+   A readable report for humans:
+   - summary
+   - key KPI highlights
+   - data quality warnings
+   - top missing columns and suggested actions
+
+This separation allows:
+- business users to read report.md
+- developers to consume kpi.json/quality.json
+- analysts to use cleaned.csv
+
+Demo run results (example)
+--------------------------
+A typical run outputs:
+- Rows in: ~123k
+- Rows out: ~118k
+- Dropped: ~4-6k
+- Duplicates removed: ~3.6k
+- Missing cells (clean): tracked and reported
+
+Numbers vary slightly depending on noise injection profile.
+
+Lessons learned
+---------------
+1) Data cleaning without reporting is dangerous:
+   you must show what changed and why.
+
+2) Schema drift is normal:
+   mapping and flexibility are mandatory.
+
+3) Locale issues are a constant source of silent errors:
+   explicit parsing rules prevent wrong results.
+
+4) A portfolio project becomes “real” when:
+   - it has reproducible steps
+   - it produces shareable outputs
+   - it documents decisions and trade-offs
+
+How this could scale in production
+----------------------------------
+If productized:
+- add config file (YAML) for schema mapping and rules
+- add unit tests for parsers and transformations
+- add more robust logging (JSON logs)
+- store quality metrics over time (trend of data health)
+- support multiple dataset “templates” (orders, CRM, invoices)
+- add a small UI wrapper (upload → outputs) in the portfolio
+
+Appendix: project structure (high level)
+----------------------------------------
+public/projects/smart-data-cleaning/
+  demo/
+    input/orders_raw.csv
+    output/cleaned.csv
+    output/kpi.json
+    output/quality.json
+    output/report.md
+
+tools/smart-data-cleaning/
+  src/
+    run_pipeline.py
+    cleaning.py
+    quality_checks.py
+    kpi.py
+    report.py
+    synth/
+      generate_clean_base.py
+      sample_base.py
+      inject_noise.py
+      profiles.py
+  data/
+    kaggle_raw/   (not committed)
+    working/      (not committed)

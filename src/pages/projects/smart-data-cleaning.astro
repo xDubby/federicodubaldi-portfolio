@@ -1,12 +1,82 @@
 ---
 import "../../styles/global.css";
+import fs from "node:fs";
+import path from "node:path";
 
+/**
+ * IMPORTANT:
+ * - Sostituisci i placeholder qui sotto prima della versione finale.
+ * - Il link "case study" punta a un file .txt che genereremo dopo.
+ */
 const project = {
   title: "Smart Data Cleaning & Reporting",
-  subtitle: "Clean datasets + KPI + report pronti da condividere, partendo da export reali e sporchi.",
+  subtitle:
+    "Da export sporchi (e-commerce/CRM) a dataset puliti + KPI + report, con pipeline riproducibile e quality checks.",
   status: "In progress",
-  repoUrl: "https://github.com/xDubby/smart-data-cleaning-reporting",
+  // TODO: sostituire con repo reale
+  repoUrl: "https://github.com/PLACEHOLDER/REPO-URL",
   tags: ["Python", "Data Quality", "Reporting", "CLI Tool"],
+};
+
+// --------- Load demo outputs from /public (build-time) ----------
+const root = process.cwd();
+const demoBase = path.join(
+  root,
+  "public",
+  "projects",
+  "smart-data-cleaning",
+  "demo"
+);
+
+const readTextSafe = (p) => {
+  try {
+    return fs.readFileSync(p, "utf-8");
+  } catch {
+    return null;
+  }
+};
+
+const readJsonSafe = (p) => {
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf-8"));
+  } catch {
+    return null;
+  }
+};
+
+const files = {
+  input: "/projects/smart-data-cleaning/demo/input/orders_raw.csv",
+  cleaned: "/projects/smart-data-cleaning/demo/output/cleaned.csv",
+  kpi: "/projects/smart-data-cleaning/demo/output/kpi.json",
+  quality: "/projects/smart-data-cleaning/demo/output/quality.json",
+  report: "/projects/smart-data-cleaning/demo/output/report.md",
+  // TODO: questo file lo genereremo dopo
+  caseStudy: "/projects/smart-data-cleaning/case-study.txt",
+};
+
+const kpiPath = path.join(demoBase, "output", "kpi.json");
+const qualityPath = path.join(demoBase, "output", "quality.json");
+const reportPath = path.join(demoBase, "output", "report.md");
+
+const kpiJson = readJsonSafe(kpiPath);
+const qualityJson = readJsonSafe(qualityPath);
+const reportMd = readTextSafe(reportPath);
+
+const pretty = (obj) => (obj ? JSON.stringify(obj, null, 2) : null);
+
+const reportPreview = reportMd
+  ? reportMd.split("\n").slice(0, 28).join("\n")
+  : null;
+
+const hasDemo = Boolean(kpiJson) && Boolean(qualityJson) && Boolean(reportMd);
+
+const nfmt = (x) => {
+  if (x === null || x === undefined) return "—";
+  try {
+    return Number(x).toLocaleString("it-IT");
+  } catch {
+    return String(x);
+  }
 };
 ---
 
@@ -14,21 +84,50 @@ const project = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{project.title} — {project.status}</title>
+    <title>{project.title}</title>
     <meta name="description" content={project.subtitle} />
+    <meta name="theme-color" content="#09090b" />
 
     <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      #top,
+      #demo,
+      #how,
+      #impact {
+        scroll-margin-top: 96px;
+      }
+
       .page-enter {
         animation: fadeIn 0.18s ease-out;
       }
       @keyframes fadeIn {
-        from { opacity: 0.96; transform: translateY(2px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+          opacity: 0.96;
+          transform: translateY(2px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Spark canvas (home-like) */
+      #spark {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        opacity: 0.45;
+        pointer-events: none;
       }
     </style>
   </head>
 
   <body class="bg-zinc-950 text-zinc-50 selection:bg-violet-400/30 selection:text-zinc-50">
+    {/* Background layers */}
     <div class="pointer-events-none fixed inset-0 -z-10">
       <div
         class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_15%_10%,rgba(139,92,246,0.18),transparent_55%),radial-gradient(900px_circle_at_85%_20%,rgba(99,102,241,0.14),transparent_55%),radial-gradient(900px_circle_at_50%_90%,rgba(34,197,94,0.06),transparent_60%)]"
@@ -36,8 +135,10 @@ const project = {
       <div
         class="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:56px_56px]"
       ></div>
-      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/15 to-zinc-950"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/10 to-zinc-950"></div>
     </div>
+
+    <canvas id="spark"></canvas>
 
     <header class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/60 backdrop-blur">
       <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
@@ -46,19 +147,25 @@ const project = {
           <span class="text-sm md:text-base">Federico D'Ubaldi</span>
         </a>
 
-        <a href="/#projects" class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-200 hover:bg-white/10">
-          ← Torna ai progetti
-        </a>
+        <div class="flex items-center gap-2">
+          <a
+            href="/#projects"
+            class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-200 hover:bg-white/10"
+          >
+            ← Torna ai progetti
+          </a>
+        </div>
       </div>
     </header>
 
-    <main class="page-enter mx-auto max-w-5xl px-4 py-10 md:py-14">
+    <main id="top" class="page-enter mx-auto max-w-5xl px-4 py-10 md:py-14">
+      {/* Hero */}
       <section class="rounded-3xl border border-white/10 bg-gradient-to-b from-white/7 to-white/3 p-7 md:p-10">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="flex flex-wrap items-start justify-between gap-6">
           <div class="max-w-3xl">
             <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
               <span class="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-              {project.status}
+              {project.status} • demo-first • reproducible
             </div>
 
             <h1 class="mt-4 text-3xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
@@ -67,6 +174,13 @@ const project = {
 
             <p class="mt-4 text-base leading-relaxed text-zinc-300">
               {project.subtitle}
+            </p>
+
+            <p class="mt-3 text-sm text-zinc-300">
+              Output: <span class="text-zinc-100 font-semibold">cleaned.csv</span> +{" "}
+              <span class="text-zinc-100 font-semibold">kpi.json</span> +{" "}
+              <span class="text-zinc-100 font-semibold">quality.json</span> +{" "}
+              <span class="text-zinc-100 font-semibold">report.md</span>.
             </p>
 
             <div class="mt-6 flex flex-wrap gap-2">
@@ -78,90 +192,395 @@ const project = {
             </div>
 
             <div class="mt-7 flex flex-wrap gap-3 text-sm">
-              <a href={project.repoUrl} target="_blank" class="rounded-xl bg-zinc-50 px-4 py-2 font-semibold text-zinc-950 hover:bg-white">
-                Repo GitHub
+              <a
+                href={project.repoUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="rounded-xl bg-zinc-50 px-4 py-2 font-semibold text-zinc-950 hover:bg-white"
+              >
+                Repo GitHub (placeholder)
               </a>
 
-              <a href="#outputs" class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10">
-                Vedi output
+              <a
+                href="#demo"
+                class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10"
+              >
+                Vai alla demo
+              </a>
+
+              <a
+                href={files.caseStudy}
+                class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10"
+              >
+                Leggi tutto il processo del case study (TXT)
               </a>
             </div>
+
+            {!hasDemo && (
+              <p class="mt-4 text-sm text-amber-200/80">
+                Nota: non trovo ancora i file demo in{" "}
+                <code class="text-amber-200">/public/projects/smart-data-cleaning/demo/output</code>.
+                Esegui la pipeline e ricarica la pagina.
+              </p>
+            )}
           </div>
 
+          {/* “Cover” = preview reale */}
           <div class="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-white/5">
             <div class="p-4">
-              <p class="text-xs text-zinc-400">Cover (placeholder)</p>
-              <div class="mt-3 aspect-[16/10] rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent"></div>
+              <p class="text-xs text-zinc-400">Preview (output reali)</p>
+
+              <div class="mt-3 rounded-xl border border-white/10 bg-zinc-950/55 p-4">
+                {qualityJson ? (
+                  <div class="space-y-2 text-xs text-zinc-200">
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Rows in</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.rows?.raw)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Rows out</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.rows?.clean)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Dropped</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.rows?.dropped)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Duplicates removed</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.duplicates_removed)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p class="text-xs text-zinc-400">
+                    Esegui la pipeline per vedere la preview qui.
+                  </p>
+                )}
+              </div>
+
               <p class="mt-3 text-xs text-zinc-400">
-                Qui metteremo uno screenshot del report o del tool in esecuzione.
+                (Quando vuoi, sostituibile con screenshot reali di console e report.)
               </p>
             </div>
           </div>
         </div>
+
+        {/* KPI strip (visual impact) */}
+        <div class="mt-7 grid gap-3 md:grid-cols-4">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Rows in</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
+              {qualityJson ? nfmt(qualityJson?.rows?.raw) : "—"}
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Rows out</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
+              {qualityJson ? nfmt(qualityJson?.rows?.clean) : "—"}
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Dropped</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
+              {qualityJson ? nfmt(qualityJson?.rows?.dropped) : "—"}
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Duplicates removed</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
+              {qualityJson ? nfmt(qualityJson?.duplicates_removed) : "—"}
+            </div>
+          </div>
+        </div>
       </section>
 
+      {/* Problem / Solution */}
       <section class="mt-10 grid gap-4 md:grid-cols-2">
         <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <h2 class="text-lg font-semibold text-zinc-50">Problema</h2>
+          <h2 class="text-lg font-semibold text-zinc-50">Problema (real world)</h2>
           <p class="mt-2 text-sm leading-relaxed text-zinc-300">
-            Export CSV/Excel reali sono spesso incompleti, incoerenti e pieni di valori "sporchi".
-            Risultato: analisi lente, errori, report non affidabili.
+            Export CSV/Excel reali sono spesso incompleti, incoerenti e pieni di valori “sporchi”.
+            Il rischio non è solo “sporcare il dataset”: è generare KPI sbagliate e decisioni sbagliate.
           </p>
           <ul class="mt-4 space-y-2 text-sm text-zinc-300">
-            <li>• colonne con nomi diversi (schema variabile)</li>
-            <li>• date e numeri in formati misti</li>
-            <li>• duplicati / righe rotte / null sparsi</li>
+            <li>• colonne con nomi diversi o mancanti (schema drift)</li>
+            <li>• date in formati misti (YYYY-MM-DD / DD/MM/YYYY)</li>
+            <li>• numeri come stringhe, prezzi con virgola</li>
+            <li>• duplicati silenziosi che gonfiano i totali</li>
+            <li>• null sparsi e righe “rotte”</li>
           </ul>
         </div>
 
         <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <h2 class="text-lg font-semibold text-zinc-50">Soluzione</h2>
+          <h2 class="text-lg font-semibold text-zinc-50">Soluzione (approccio)</h2>
           <p class="mt-2 text-sm leading-relaxed text-zinc-300">
-            Un tool "idiot-proof" che prende un dataset grezzo e produce:
-            dataset pulito, KPI essenziali e report leggibile.
+            Una pipeline “idiot-proof” che standardizza lo schema, normalizza i tipi, applica regole chiare di cleaning
+            e produce output separati: dati puliti, KPI e report di qualità.
           </p>
           <ul class="mt-4 space-y-2 text-sm text-zinc-300">
-            <li>• cleaning + standardizzazione</li>
-            <li>• quality checks + warning chiari</li>
-            <li>• output pronti da condividere</li>
+            <li>• parsing difensivo + normalizzazione tipi</li>
+            <li>• regole esplicite (drop motivati, dedup su chiavi)</li>
+            <li>• quality report leggibile (cosa è successo e perché)</li>
+            <li>• output “business-ready” per condivisione e audit</li>
           </ul>
         </div>
       </section>
 
-      <section id="outputs" class="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6">
-        <h2 class="text-lg font-semibold text-zinc-50">Output (placeholder)</h2>
-        <p class="mt-2 text-sm text-zinc-300">
-          Qui mostreremo esempi reali: <code class="text-violet-300">cleaned.csv</code>, <code class="text-violet-300">kpi.json</code>, <code class="text-violet-300">quality.json</code>, <code class="text-violet-300">report.md</code>.
-        </p>
+      {/* DEMO */}
+      <section id="demo" class="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-zinc-50">
+              Live demo (real input → real output)
+            </h2>
+            <p class="mt-2 text-sm text-zinc-300">
+              Input sporco + output pulito generati dalla pipeline. File pronti da scaricare.
+            </p>
+          </div>
 
+          <a
+            href="#how"
+            class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            Come riprodurre
+          </a>
+        </div>
+
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          {/* Input */}
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="text-sm font-semibold text-zinc-50">Input (sporco)</p>
+            <p class="mt-2 text-sm text-zinc-300">
+              Schema drift + date miste + prezzi con virgola + duplicati + missing (synthetic noise controllato).
+            </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a
+                href={files.input}
+                download
+                class="rounded-xl bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-white"
+              >
+                Download orders_raw.csv
+              </a>
+            </div>
+          </div>
+
+          {/* Output */}
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p class="text-sm font-semibold text-zinc-50">Output (pulito + report)</p>
+            <p class="mt-2 text-sm text-zinc-300">
+              Dataset pulito + KPI + quality summary + report leggibile.
+            </p>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a
+                href={files.cleaned}
+                download
+                class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Download cleaned.csv
+              </a>
+
+              <a
+                href={files.kpi}
+                download
+                class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Download kpi.json
+              </a>
+
+              <a
+                href={files.quality}
+                download
+                class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Download quality.json
+              </a>
+
+              <a
+                href={files.report}
+                target="_blank"
+                rel="noreferrer"
+                class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Apri report.md
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Real previews */}
         <div class="mt-5 grid gap-3 md:grid-cols-2">
           <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p class="text-xs text-zinc-400">kpi.json (example)</p>
-            <pre class="mt-3 overflow-auto rounded-xl bg-zinc-950/60 p-4 text-xs text-zinc-200"><code>{`{
-  "revenue": 12345.67,
-  "orders": 321,
-  "aov": 38.46,
-  "repeat_rate": 0.27
-}`}</code></pre>
+            <p class="text-xs text-zinc-400">kpi.json (real)</p>
+            <pre class="mt-3 overflow-auto rounded-xl bg-zinc-950/60 p-4 text-xs text-zinc-200"><code>{
+kpiJson ? pretty(kpiJson) : `{"note":"run pipeline to generate kpi.json"}`
+}</code></pre>
           </div>
 
           <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p class="text-xs text-zinc-400">quality.json (example)</p>
-            <pre class="mt-3 overflow-auto rounded-xl bg-zinc-950/60 p-4 text-xs text-zinc-200"><code>{`{
-  "rows_in": 1000,
-  "rows_out": 972,
-  "dropped_rows": 28,
-  "warnings": ["missing_email", "invalid_date_format"]
-}`}</code></pre>
+            <p class="text-xs text-zinc-400">quality.json (real)</p>
+            <pre class="mt-3 overflow-auto rounded-xl bg-zinc-950/60 p-4 text-xs text-zinc-200"><code>{
+qualityJson ? pretty(qualityJson) : `{"note":"run pipeline to generate quality.json"}`
+}</code></pre>
           </div>
+        </div>
+
+        <div class="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <p class="text-xs text-zinc-400">report.md (preview)</p>
+          <pre class="mt-3 overflow-auto rounded-xl bg-zinc-950/60 p-4 text-xs text-zinc-200"><code>{
+reportPreview ?? "Run pipeline to generate report.md"
+}</code></pre>
+        </div>
+      </section>
+
+      {/* What this demonstrates + how to */}
+      <section id="how" class="mt-10 grid gap-4 md:grid-cols-2">
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h2 class="text-lg font-semibold text-zinc-50">Cosa dimostra</h2>
+          <ul class="mt-4 space-y-2 text-sm text-zinc-300">
+            <li>• gestione schema variabile (colonne rinominate / mancanti)</li>
+            <li>• normalizzazione tipi (date miste, prezzi “1,47”, numeri come stringhe)</li>
+            <li>• dedup e drop rules esplicite (con motivazione)</li>
+            <li>• data quality checks misurabili (missing, duplicati, scarti)</li>
+            <li>• output “auditabile”: dati + KPI + quality + report separati</li>
+            <li>• design “idiot-proof”: messaggi chiari, niente crash incomprensibili</li>
+          </ul>
+
+          <div class="mt-5">
+            <a
+              href={files.caseStudy}
+              class="inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              Leggi tutto il processo del case study (TXT)
+            </a>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h2 class="text-lg font-semibold text-zinc-50">Come riprodurre</h2>
+          <p class="mt-2 text-sm text-zinc-300">
+            Comandi minimi per rigenerare input/output (dataset Kaggle escluso dal repo).
+          </p>
+
+          <pre class="mt-4 overflow-auto rounded-2xl border border-white/10 bg-zinc-950/60 p-4 text-xs text-zinc-200"><code>python tools/smart-data-cleaning/src/synth/sample_base.py
+python tools/smart-data-cleaning/src/synth/inject_noise.py
+python tools/smart-data-cleaning/src/run_pipeline.py</code></pre>
+
+          <p class="mt-3 text-xs text-zinc-400">
+            Tip: se vuoi rifare tutto da zero, rigenera anche la base con{" "}
+            <code class="text-violet-300">generate_clean_base.py</code>.
+          </p>
+        </div>
+      </section>
+
+      {/* Why this matters */}
+      <section id="impact" class="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h2 class="text-lg font-semibold text-zinc-50">Why this matters</h2>
+        <p class="mt-2 text-sm leading-relaxed text-zinc-300">
+          Nei progetti reali, i dati “sporchi” raramente fanno crash: più spesso alterano i KPI in silenzio.
+          Qui l’obiettivo è rendere la data quality <span class="text-zinc-100 font-semibold">esplicita, misurabile e riproducibile</span>.
+        </p>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <a
+            href={project.repoUrl}
+            target="_blank"
+            rel="noreferrer"
+            class="rounded-xl bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-white"
+          >
+            Vedi codice sorgente (placeholder)
+          </a>
+
+          <a
+            href={files.caseStudy}
+            class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            Leggi tutto il processo del case study (TXT)
+          </a>
         </div>
       </section>
 
       <div class="mt-10">
-        <a href="/#projects" class="inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">
+        <a
+          href="/#projects"
+          class="inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+        >
           ← Torna ai progetti
         </a>
       </div>
     </main>
+
+    <script>
+      // ----------------------------
+      // Spark background (home-like)
+      // ----------------------------
+      const canvas = document.getElementById("spark");
+      const ctx = canvas?.getContext("2d");
+
+      function resize() {
+        if (!canvas || !ctx) return;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      const N = 44;
+      const points = Array.from({ length: N }).map(() => ({
+        x: Math.random(),
+        y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.00055,
+        vy: (Math.random() - 0.5) * 0.00055,
+        z: Math.random(),
+      }));
+
+      function tick() {
+        if (!canvas || !ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        for (const p of points) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > 1) p.vx *= -1;
+          if (p.y < 0 || p.y > 1) p.vy *= -1;
+        }
+
+        for (let i = 0; i < points.length; i++) {
+          for (let j = i + 1; j < points.length; j++) {
+            const a = points[i];
+            const b = points[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+
+            if (d < 0.14) {
+              const alpha = (1 - d / 0.14) * 0.20;
+              ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(a.x * w, a.y * h);
+              ctx.lineTo(b.x * w, b.y * h);
+              ctx.stroke();
+            }
+          }
+        }
+
+        for (const s of points) {
+          ctx.beginPath();
+          ctx.arc(s.x * w, s.y * h, 2 + s.z * 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(139,92,246,${0.05 + s.z * 0.10})`;
+          ctx.fill();
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    </script>
   </body>
 </html>
