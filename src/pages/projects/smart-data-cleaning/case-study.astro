@@ -1,0 +1,578 @@
+---
+import "../../../styles/global.css";
+import { getCollection } from "astro:content";
+
+// Page meta
+const page = {
+  title: "Case Study — Smart Data Cleaning & Reporting",
+  subtitle:
+    "Processo completo (demo-first) con output riproducibili, quality checks e ragionamento esplicito.",
+  projectHref: "/projects/smart-data-cleaning",
+};
+
+const defaultLang = "it";
+
+// ---- Load markdown sections (Astro Content Collections) ----
+const allDocs = await getCollection("caseStudies");
+
+const docsIT = allDocs
+  .filter((d) => d.id.startsWith("smart-data-cleaning/it/"))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const docsEN = allDocs
+  .filter((d) => d.id.startsWith("smart-data-cleaning/en/"))
+  .sort((a, b) => a.data.order - b.data.order);
+
+// helper per creare id stabili dagli md (es. "01-problem")
+const mdId = (doc) => doc.id.split("/").pop()?.replace(".md", "") ?? doc.id;
+
+// ✅ PRE-RENDER: risolve NoMatchingRenderer (niente <doc.render />)
+const renderedIT = await Promise.all(
+  docsIT.map(async (doc) => {
+    const id = mdId(doc);
+    const { Content } = await doc.render();
+    return { doc, id, Content };
+  })
+);
+
+const renderedEN = await Promise.all(
+  docsEN.map(async (doc) => {
+    const id = mdId(doc);
+    const { Content } = await doc.render();
+    return { doc, id, Content };
+  })
+);
+
+// ✅ Pair IT + EN by id (robusto: NON dipende dagli indici)
+const enById = new Map(renderedEN.map((x) => [x.id, x]));
+const sections = renderedIT
+  .map((it) => ({
+    id: it.id,
+    order: it.doc.data.order,
+    it,
+    en: enById.get(it.id) ?? null,
+  }))
+  .sort((a, b) => a.order - b.order);
+
+// ✅ TOC: intro + sezioni, ma label IT/EN via data-lang-block (switch client-side)
+const toc = [
+  { id: "intro", it: "Intro", en: "Intro" },
+  ...sections.map((s) => ({
+    id: s.id,
+    it: s.it.doc.data.title,
+    en: s.en?.doc?.data?.title ?? s.it.doc.data.title,
+  })),
+];
+---
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{page.title}</title>
+    <meta name="description" content={page.subtitle} />
+    <meta name="theme-color" content="#09090b" />
+
+    <style>
+      html { scroll-behavior: auto; }
+
+      /* offset sticky header */
+      #top { scroll-margin-top: 96px; }
+      section[data-page] { scroll-margin-top: 96px; }
+
+      /* Background canvas */
+      #spark {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        opacity: 0.45;
+        pointer-events: none;
+      }
+
+      /* --- Book feel (senza hijack) --- */
+      .snap-y { scroll-snap-type: y proximity; }
+      .snap-page {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        min-height: clamp(560px, 74vh, 760px);
+        display: grid;
+        align-content: start;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+
+      /* SOLO Intro */
+      #intro.snap-page { min-height: clamp(420px, 58vh, 640px); }
+
+      /* Animazione leggera “pagina che sale” */
+      .page-card {
+        transform: translateY(14px) scale(0.992);
+        opacity: 0.78;
+        filter: blur(0.2px);
+        transition: transform 260ms ease-out, opacity 260ms ease-out, filter 260ms ease-out;
+        will-change: transform, opacity, filter;
+      }
+      .page-card.is-active {
+        transform: translateY(0px) scale(1);
+        opacity: 1;
+        filter: blur(0px);
+      }
+
+      /* TOC */
+      .toc a.active {
+        background: rgba(255,255,255,0.10);
+        border-color: rgba(255,255,255,0.22);
+        box-shadow: 0 0 0 1px rgba(139,92,246,0.12), 0 0 18px rgba(139,92,246,0.10);
+      }
+
+      /* Lang toggle (pill) */
+      .lang-btn.active {
+        background: rgba(255,255,255,0.12);
+        border-color: rgba(255,255,255,0.25);
+      }
+
+      /* Markdown typography */
+      .md-article :global(p) { margin-top: 0.9rem; }
+      .md-article :global(ul) { margin-top: 0.9rem; padding-left: 1.2rem; }
+      .md-article :global(li) { margin-top: 0.35rem; }
+      .md-article :global(h3) { margin-top: 1.2rem; font-weight: 600; }
+      .md-article :global(code) {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 10px;
+        padding: 0.15rem 0.45rem;
+      }
+      .md-article :global(pre) {
+        margin-top: 0.9rem;
+        background: rgba(9,9,11,0.65);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 16px;
+        padding: 14px;
+        overflow: auto;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .page-card { transition: none; transform: none; opacity: 1; }
+      }
+    </style>
+  </head>
+
+  <body class="bg-zinc-950 text-zinc-50 selection:bg-violet-400/30 selection:text-zinc-50">
+    {/* Background layers */}
+    <div class="pointer-events-none fixed inset-0 -z-10">
+      <div
+        class="absolute inset-0 bg-[radial-gradient(1200px_circle_at_15%_10%,rgba(139,92,246,0.18),transparent_55%),radial-gradient(900px_circle_at_85%_20%,rgba(99,102,241,0.14),transparent_55%),radial-gradient(900px_circle_at_50%_90%,rgba(34,197,94,0.06),transparent_60%)]"
+      ></div>
+      <div
+        class="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:56px_56px]"
+      ></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-950/10 to-zinc-950"></div>
+    </div>
+
+    <canvas id="spark"></canvas>
+
+    {/* Header coerente */}
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/60 backdrop-blur">
+      <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <a href="/" class="flex items-center gap-3">
+          <div class="logo-wrap">
+            <img src="/fd-logo.svg" alt="FD logo" class="logo-img" />
+          </div>
+          <div class="leading-tight">
+            <div class="text-sm font-semibold">Federico D'Ubaldi</div>
+            <div class="text-xs text-white/60">Builder • Data • Automation • Web</div>
+          </div>
+        </a>
+
+        <div class="flex items-center gap-2">
+          <a
+            href={page.projectHref}
+            class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-200 hover:bg-white/10"
+          >
+            ← Torna al progetto
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top" class="mx-auto max-w-6xl px-4 py-10 md:py-12">
+      {/* Hero */}
+      <section class="rounded-3xl border border-white/10 bg-gradient-to-b from-white/7 to-white/3 p-7 md:p-10">
+        <div class="flex flex-wrap items-start justify-between gap-6">
+          <div class="max-w-3xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
+              <span class="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
+              case study • narrative • reproducible
+            </div>
+
+            <h1 class="mt-4 text-3xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
+              {page.title}
+            </h1>
+
+            <p class="mt-4 text-base leading-relaxed text-zinc-300">
+              {page.subtitle}
+            </p>
+
+            {/* Lang toggle */}
+            <div class="mt-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1">
+              <button class="lang-btn rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-200 hover:bg-white/10" data-lang="it">
+                🇮🇹 IT
+              </button>
+              <button class="lang-btn rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-200 hover:bg-white/10" data-lang="en">
+                🇬🇧 EN
+              </button>
+            </div>
+
+            <p class="mt-3 text-xs text-zinc-400">
+              Tip: usa l’indice a sinistra per navigare. Lo scroll “snappa” tra le sezioni.
+            </p>
+          </div>
+
+          <div class="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Cosa troverai qui</div>
+            <ul class="mt-3 space-y-2 text-sm text-zinc-200">
+              <li>• problema → scelte → pipeline</li>
+              <li>• output & quality proof</li>
+              <li>• limiti + next steps (senza finta perfezione)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Layout: TOC left + paged content right */}
+      <section class="mt-8 grid gap-6 md:grid-cols-[240px_1fr]">
+        {/* TOC */}
+        <aside class="toc hidden md:block">
+          <div class="sticky top-[92px] rounded-3xl border border-white/10 bg-white/5 p-4">
+            <div class="flex items-center justify-between">
+              <div class="text-xs text-zinc-400">Indice</div>
+              <a href="#intro" class="text-xs text-zinc-300 hover:text-white">vai</a>
+            </div>
+
+            <nav class="mt-3 space-y-2">
+              {toc.map((s) => (
+                <a
+                  href={`#${s.id}`}
+                  data-toc-link={`#${s.id}`}
+                  class="block rounded-xl border border-white/10 bg-white/0 px-3 py-2 text-xs text-zinc-200 hover:bg-white/5"
+                >
+                  <span data-lang-block="it">{s.it}</span>
+                  <span data-lang-block="en">{s.en}</span>
+                </a>
+              ))}
+            </nav>
+
+            <div class="mt-4 rounded-2xl border border-white/10 bg-zinc-950/50 p-3">
+              <div class="text-[11px] text-zinc-400">Shortcuts</div>
+              <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                <a href={page.projectHref} class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 hover:bg-white/10">
+                  Progetto
+                </a>
+                <a href="/#projects" class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 hover:bg-white/10">
+                  Home
+                </a>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Paged content */}
+        <div class="snap-y">
+          {/* ========== INTRO (hardcoded IT/EN) ========== */}
+          <section id="intro" data-page class="snap-page">
+            <div class="page-card rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-xs text-zinc-400">Sezione</div>
+                  <h2 class="mt-2 text-xl font-semibold">Intro</h2>
+                </div>
+                <span class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-300">
+                  demo-first
+                </span>
+              </div>
+
+              <div data-lang-block="it" class="mt-4 text-sm leading-relaxed text-zinc-300">
+                <p>
+                  Questo case study documenta il processo completo: da export sporchi (e-commerce/CRM) a output riproducibili
+                  (<code class="text-zinc-100">cleaned.csv</code>, <code class="text-zinc-100">kpi.json</code>,
+                  <code class="text-zinc-100">quality.json</code>, <code class="text-zinc-100">report.md</code>).
+                </p>
+                <p class="mt-3">
+                  Focus: regole esplicite, auditabilità, e quality checks che prevengono KPI sbagliate “in silenzio”.
+                </p>
+              </div>
+
+              <div data-lang-block="en" class="mt-4 text-sm leading-relaxed text-zinc-300">
+                <p>
+                  This case study documents the full process: from messy exports (e-commerce/CRM) to reproducible outputs
+                  (<code class="text-zinc-100">cleaned.csv</code>, <code class="text-zinc-100">kpi.json</code>,
+                  <code class="text-zinc-100">quality.json</code>, <code class="text-zinc-100">report.md</code>).
+                </p>
+                <p class="mt-3">
+                  Focus: explicit rules, auditability, and quality checks that prevent silently wrong KPIs.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* ========== MARKDOWN PAGES (IT + EN) ========== */}
+          {sections.map((s) => (
+            <section id={s.id} data-page class="snap-page">
+              <div class="page-card rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
+                <div class="text-xs text-zinc-400">Sezione {s.order}</div>
+
+                {/* TITOLI */}
+                <h2 class="mt-2 text-xl font-semibold" data-lang-block="it">
+                  {s.it.doc.data.title}
+                </h2>
+
+                <h2 class="mt-2 text-xl font-semibold" data-lang-block="en">
+                  {s.en?.doc?.data?.title ?? s.it.doc.data.title}
+                </h2>
+
+                {/* CONTENUTI */}
+                <article data-lang-block="it" class="md-article mt-4 text-sm leading-relaxed text-zinc-300">
+                  <s.it.Content />
+                </article>
+
+                {s.en && (
+                  <article data-lang-block="en" class="md-article mt-4 text-sm leading-relaxed text-zinc-300">
+                    <s.en.Content />
+                  </article>
+                )}
+              </div>
+            </section>
+          ))}
+
+          {/* Footer nav */}
+          <div class="pt-2">
+            <a
+              href={page.projectHref}
+              class="inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              ← Torna al progetto
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // ----------------------------
+      // Language toggle (no reload)
+      // ----------------------------
+      const defaultLang = "{defaultLang}";
+      const btns = Array.from(document.querySelectorAll(".lang-btn"));
+      const blocks = Array.from(document.querySelectorAll("[data-lang-block]"));
+
+      function setLang(lang) {
+        btns.forEach((b) => b.classList.toggle("active", b.dataset.lang === lang));
+        blocks.forEach((el) => {
+          const isMatch = el.getAttribute("data-lang-block") === lang;
+          el.style.display = isMatch ? "" : "none";
+        });
+        try { localStorage.setItem("cs_lang", lang); } catch {}
+      }
+
+      const saved = (() => {
+        try { return localStorage.getItem("cs_lang"); } catch { return null; }
+      })();
+
+      setLang(saved || defaultLang);
+      btns.forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+      // ----------------------------
+      // Scroll spy: TOC highlight + card attiva
+      // ----------------------------
+      const tocLinks = Array.from(document.querySelectorAll("[data-toc-link]"));
+      const pages = Array.from(document.querySelectorAll("section[data-page] .page-card"));
+      const sectionEls = Array.from(document.querySelectorAll("section[data-page]"));
+
+      function setActiveSection(id) {
+        const hash = `#${id}`;
+        pages.forEach((card) => card.classList.remove("is-active"));
+        const activeSection = document.getElementById(id);
+        const activeCard = activeSection?.querySelector(".page-card");
+        if (activeCard) activeCard.classList.add("is-active");
+
+        tocLinks.forEach((a) => {
+          a.classList.toggle("active", a.getAttribute("data-toc-link") === hash);
+        });
+      }
+
+      const ioSections = new IntersectionObserver(
+        (entries) => {
+          const visible = entries.filter((e) => e.isIntersecting);
+          if (!visible.length) return;
+
+          visible.sort((a, b) => (b.intersectionRatio || 0) - (a.intersectionRatio || 0));
+          const id = visible[0].target.id;
+          if (id) setActiveSection(id);
+        },
+        { rootMargin: "-30% 0px -55% 0px", threshold: [0.12, 0.22, 0.35] }
+      );
+      sectionEls.forEach((s) => ioSections.observe(s));
+
+      (() => {
+        const first = document.querySelector("section[data-page]");
+        if (first?.id) setActiveSection(first.id);
+      })();
+
+      // ----------------------------
+      // Snap SOLO verso il basso (micro tuning)
+      // ----------------------------
+      let snapLock = false;
+      let snapTimer = 0;
+      let lastSnapAt = 0;
+      let lastSnapToId = null;
+      let lastY = window.scrollY;
+
+      const SNAP_DELAY_MS = 110;
+      const HEADER_OFFSET = 96;
+      const EPS_PX = 14;
+      const DOWN_THRESHOLD = 0.32;
+
+      function getSections() {
+        return Array.from(document.querySelectorAll("section[data-page]"));
+      }
+
+      function currentIndex(sections) {
+        const y = window.scrollY + HEADER_OFFSET + 1;
+        let idx = 0;
+        for (let i = 0; i < sections.length; i++) {
+          if (sections[i].offsetTop <= y) idx = i;
+        }
+        return idx;
+      }
+
+      function tryDirectionalSnap(direction) {
+        if (snapLock) return;
+        if (direction <= 0) return;
+
+        const now = performance.now();
+        if (now - lastSnapAt < 650) return;
+
+        const sections = getSections();
+        if (!sections.length) return;
+
+        const idx = currentIndex(sections);
+        const cur = sections[idx];
+        if (!cur) return;
+
+        const rect = cur.getBoundingClientRect();
+        const vh = window.innerHeight || 800;
+        const passed = Math.min(1, Math.max(0, -rect.top / vh));
+
+        const target = passed >= DOWN_THRESHOLD ? (sections[idx + 1] ?? null) : null;
+        if (!target) return;
+
+        const targetId = target.id;
+        if (targetId && targetId === lastSnapToId) return;
+
+        const tTop = target.getBoundingClientRect().top;
+        if (Math.abs(tTop) < EPS_PX) return;
+
+        snapLock = true;
+        lastSnapAt = now;
+        lastSnapToId = targetId || null;
+
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        setTimeout(() => { snapLock = false; }, 700);
+      }
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (snapLock) return;
+
+          const y = window.scrollY;
+          const delta = y - lastY;
+          lastY = y;
+
+          clearTimeout(snapTimer);
+          snapTimer = setTimeout(() => {
+            const direction = delta > 0 ? 1 : 0;
+            if (direction !== 0) tryDirectionalSnap(direction);
+          }, SNAP_DELAY_MS);
+        },
+        { passive: true }
+      );
+
+      // ----------------------------
+      // Background canvas (spark)
+      // ----------------------------
+      const canvas = document.getElementById("spark");
+      const ctx = canvas?.getContext("2d");
+
+      function resize() {
+        if (!canvas || !ctx) return;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      const N = 44;
+      const points = Array.from({ length: N }).map(() => ({
+        x: Math.random(),
+        y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.00055,
+        vy: (Math.random() - 0.5) * 0.00055,
+        z: Math.random(),
+      }));
+
+      function tick() {
+        if (!canvas || !ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        for (const p of points) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > 1) p.vx *= -1;
+          if (p.y < 0 || p.y > 1) p.vy *= -1;
+        }
+
+        for (let i = 0; i < points.length; i++) {
+          for (let j = i + 1; j < points.length; j++) {
+            const a = points[i];
+            const b = points[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+
+            if (d < 0.14) {
+              const alpha = (1 - d / 0.14) * 0.20;
+              ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(a.x * w, a.y * h);
+              ctx.lineTo(b.x * w, b.y * h);
+              ctx.stroke();
+            }
+          }
+        }
+
+        for (const s of points) {
+          ctx.beginPath();
+          ctx.arc(s.x * w, s.y * h, 2 + s.z * 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(139,92,246,${0.05 + s.z * 0.10})`;
+          ctx.fill();
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>

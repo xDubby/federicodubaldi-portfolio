@@ -50,12 +50,9 @@ const files = {
   kpi: "/projects/smart-data-cleaning/demo/output/kpi.json",
   quality: "/projects/smart-data-cleaning/demo/output/quality.json",
   report: "/projects/smart-data-cleaning/demo/output/report.md",
-
-  // ✅ Case study navigabile (pagina Astro)
-  caseStudy: "/projects/smart-data-cleaning/case-study",
+  // TODO: questo file lo genereremo dopo
+  caseStudy: "/projects/smart-data-cleaning/case-study.txt",
 };
-
-
 
 const kpiPath = path.join(demoBase, "output", "kpi.json");
 const qualityPath = path.join(demoBase, "output", "quality.json");
@@ -81,36 +78,6 @@ const nfmt = (x) => {
     return String(x);
   }
 };
-
-// --------- Micro chart: top missing columns ----------
-const pickMissingDict = (q) => {
-  // supporta più possibili shape, così non rompi nulla se cambi schema
-  return (
-    q?.missing_by_column ||
-    q?.missingByColumn ||
-    q?.missing?.by_column ||
-    q?.missing?.byColumn ||
-    q?.missing_columns ||
-    q?.missingColumns ||
-    null
-  );
-};
-
-const missingDict = qualityJson ? pickMissingDict(qualityJson) : null;
-
-const topMissing = missingDict
-  ? Object.entries(missingDict)
-      .map(([k, v]) => [String(k), Number(v) || 0])
-      .filter(([, v]) => v > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-  : [];
-
-const topMissingMax = topMissing.length
-  ? Math.max(...topMissing.map(([, v]) => v))
-  : 0;
-
-const pct = (v) => (topMissingMax ? Math.round((v / topMissingMax) * 100) : 0);
 ---
 
 <html lang="it">
@@ -156,25 +123,6 @@ const pct = (v) => (topMissingMax ? Math.round((v / topMissingMax) * 100) : 0);
         opacity: 0.45;
         pointer-events: none;
       }
-/* Microbar (top missing columns) */
-.microbar-row {
-  display: grid;
-  grid-template-columns: 1fr 1.6fr auto;
-  gap: 10px;
-  align-items: center;
-}
-.microbar-track {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-.microbar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: rgba(139, 92, 246, 0.75);
-}
-
     </style>
   </head>
 
@@ -194,16 +142,10 @@ const pct = (v) => (topMissingMax ? Math.round((v / topMissingMax) * 100) : 0);
 
     <header class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/60 backdrop-blur">
       <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-<a href="/" class="flex items-center gap-3">
-  <div class="logo-wrap">
-    <img src="/fd-logo.svg" alt="FD logo" class="logo-img" />
-  </div>
-  <div class="leading-tight">
-    <div class="text-sm font-semibold">Federico D'Ubaldi</div>
-    <div class="text-xs text-white/60">Builder • Data • Automation • Web</div>
-  </div>
-</a>
-
+        <a href="/" class="flex items-center gap-3 font-semibold tracking-tight">
+          <img src="/fd-logo.png" alt="FD Logo" class="h-7 w-auto" />
+          <span class="text-sm md:text-base">Federico D'Ubaldi</span>
+        </a>
 
         <div class="flex items-center gap-2">
           <a
@@ -270,8 +212,8 @@ const pct = (v) => (topMissingMax ? Math.round((v / topMissingMax) * 100) : 0);
                 href={files.caseStudy}
                 class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10"
               >
-                Leggi tutto il processo del case study              
-	</a>
+                Leggi tutto il processo del case study (TXT)
+              </a>
             </div>
 
             {!hasDemo && (
@@ -283,98 +225,72 @@ const pct = (v) => (topMissingMax ? Math.round((v / topMissingMax) * 100) : 0);
             )}
           </div>
 
-{/* Proof block (unificato) */}
-<div class="w-full md:min-w-[520px] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-  <div class="p-4 md:p-5">
-    <div class="flex items-center justify-between gap-3">
-      <p class="text-xs text-zinc-400">Preview output reali (quality.json)</p>
-      <span class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-300">
-        data quality proof
-      </span>
-    </div>
+          {/* “Cover” = preview reale */}
+          <div class="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            <div class="p-4">
+              <p class="text-xs text-zinc-400">Preview (output reali)</p>
 
-    <div class="mt-4 grid gap-4 md:grid-cols-2">
-      {/* Left: big numbers */}
-      <div class="rounded-xl border border-white/10 bg-zinc-950/55 p-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <div class="text-[11px] text-zinc-400">Rows in</div>
-            <div class="mt-1 text-2xl font-semibold text-zinc-50">
+              <div class="mt-3 rounded-xl border border-white/10 bg-zinc-950/55 p-4">
+                {qualityJson ? (
+                  <div class="space-y-2 text-xs text-zinc-200">
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Rows in</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.rows?.raw)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Rows out</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.rows?.clean)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Dropped</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.rows?.dropped)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-zinc-400">Duplicates removed</span>
+                      <span class="font-semibold">{nfmt(qualityJson?.duplicates_removed)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p class="text-xs text-zinc-400">
+                    Esegui la pipeline per vedere la preview qui.
+                  </p>
+                )}
+              </div>
+
+              <p class="mt-3 text-xs text-zinc-400">
+                (Quando vuoi, sostituibile con screenshot reali di console e report.)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI strip (visual impact) */}
+        <div class="mt-7 grid gap-3 md:grid-cols-4">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Rows in</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
               {qualityJson ? nfmt(qualityJson?.rows?.raw) : "—"}
             </div>
           </div>
-
-          <div>
-            <div class="text-[11px] text-zinc-400">Rows out</div>
-            <div class="mt-1 text-2xl font-semibold text-zinc-50">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Rows out</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
               {qualityJson ? nfmt(qualityJson?.rows?.clean) : "—"}
             </div>
           </div>
-
-          <div>
-            <div class="text-[11px] text-zinc-400">Dropped</div>
-            <div class="mt-1 text-2xl font-semibold text-zinc-50">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Dropped</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
               {qualityJson ? nfmt(qualityJson?.rows?.dropped) : "—"}
             </div>
           </div>
-
-          <div>
-            <div class="text-[11px] text-zinc-400">Duplicates</div>
-            <div class="mt-1 text-2xl font-semibold text-zinc-50">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="text-xs text-zinc-400">Duplicates removed</div>
+            <div class="mt-1 text-xl font-semibold text-zinc-50">
               {qualityJson ? nfmt(qualityJson?.duplicates_removed) : "—"}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Right: micro chart */}
-      <div class="rounded-xl border border-white/10 bg-zinc-950/55 p-4">
-        <div class="flex items-center justify-between">
-          <p class="text-[11px] text-zinc-400">Top missing columns</p>
-          <p class="text-[11px] text-zinc-500">top 5</p>
-        </div>
-
-        {qualityJson ? (
-          topMissing.length ? (
-            <div class="mt-3 space-y-2">
-              {topMissing.map(([col, v]) => (
-                <div class="microbar-row">
-                  <span class="truncate text-xs text-zinc-200" title={col}>
-                    {col}
-                  </span>
-
-                  <div class="microbar-track">
-                    <div class="microbar-fill" style={`width:${pct(v)}%`}></div>
-                  </div>
-
-                  <span class="text-xs text-zinc-300 tabular-nums">{nfmt(v)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p class="mt-3 text-xs text-zinc-400">
-  {topMissing.length
-    ? "Distribuzione dei missing per colonna."
-    : "Dataset pulito: nessun missing significativo rilevato."}
-</p>
-
-          )
-        ) : (
-          <p class="mt-3 text-xs text-zinc-400">
-            Esegui la pipeline per vedere il micro-grafico.
-          </p>
-        )}
-
-        <p class="mt-3 text-[11px] text-zinc-500">
-          Fonte: <span class="text-zinc-300">quality.json</span>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-
-        </div>
-
       </section>
 
       {/* Problem / Solution */}
@@ -534,7 +450,7 @@ reportPreview ?? "Run pipeline to generate report.md"
               href={files.caseStudy}
               class="inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
             >
-              Leggi tutto il processo del case study 
+              Leggi tutto il processo del case study (TXT)
             </a>
           </div>
         </div>
@@ -578,7 +494,7 @@ python tools/smart-data-cleaning/src/run_pipeline.py</code></pre>
             href={files.caseStudy}
             class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
           >
-            Leggi tutto il processo del case study 
+            Leggi tutto il processo del case study (TXT)
           </a>
         </div>
       </section>
